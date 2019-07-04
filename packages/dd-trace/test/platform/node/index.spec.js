@@ -211,6 +211,7 @@ describe('Platform', () => {
     describe('request', () => {
       let request
       let log
+      let getContainerInfo
 
       beforeEach(() => {
         nock.disableNetConnect()
@@ -218,7 +219,11 @@ describe('Platform', () => {
         log = {
           error: sinon.spy()
         }
+        getContainerInfo = {
+          sync: sinon.stub().returns({ containerId: 'abcd' })
+        }
         request = proxyquire('../src/platform/node/request', {
+          'container-info': getContainerInfo,
           '../../log': log
         })
       })
@@ -323,6 +328,24 @@ describe('Platform', () => {
           expect(err).to.be.instanceof(Error)
           expect(err.message).to.equal('Network error trying to reach the agent: socket hang up')
           done()
+        })
+      })
+
+      it('should inject the container ID', () => {
+        nock('http://test:123', {
+          reqheaders: {
+            'datadog-container-id': 'abcd'
+          }
+        })
+          .get('/')
+          .reply(200, 'OK')
+
+        return request({
+          hostname: 'test',
+          port: 123,
+          path: '/'
+        }, (err, res) => {
+          expect(res).to.equal('OK')
         })
       })
     })
