@@ -27,6 +27,17 @@ describe('Plugin', () => {
       ipc.close()
     })
 
+    after(function (done) {
+      this.timeout(5 * 1000)
+      setTimeout(() => {
+        const scope = tracer._tracer._scope
+        Object.keys(scope._spans).forEach((asyncId) => {
+          console.log(asyncId, scope._types[asyncId], scope._spans[asyncId] && scope._spans[asyncId].toString())
+        })
+        done()
+      }, 4 * 1000)
+    })
+
     beforeEach(() => {
       return agent.load(plugin, 'net')
         .then(() => {
